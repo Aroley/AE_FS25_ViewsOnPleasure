@@ -1,118 +1,80 @@
-let protagonist;
-let smallShapes = [];
+let moveX = 0;
+let moveY = 0;
+let snake = [];
 
 function setup() {
-  createCanvas(800, 800);
-  protagonist = new Protagonist(width / 2, height / 2);
+  createCanvas(windowWidth, windowHeight);
+  noStroke();
+  rectMode(CENTER);
+  // Initially add the head to the snake array
+  snake.push(new Segment(0, 0, 120, 1, 255));
 }
 
 function draw() {
-  background(255);
+  background("#35063E");
+  fill(255);
+  
+  // Head movement (follows the mouse with delay)
+  moveX += (mouseX - moveX) * 0.1;
+  moveY += (mouseY - moveY) * 0.1;
 
-  // Display grid
-  drawGrid();
+  // Update the position of the head (first segment)
+  snake[0].x = moveX;
+  snake[0].y = moveY;
+  
+  // Move each segment after the first (following previous segment)
+  for (let i = 1; i < snake.length; i++) {
+    let currentSegment = snake[i];
+    let previousSegment = snake[i - 1];
+    
+    // Move the current segment towards the previous one
+    currentSegment.moveTo(previousSegment.x, previousSegment.y);
+    currentSegment.display();
+  }
 
-  // Update and draw big circle
-  protagonist.update(smallShapes);
-  protagonist.display();
-
-  // Draw all small circles and squares
-  for (let shape of smallShapes) {
-    shape.display();
+  // Display the head (first segment)
+  snake[0].display();
+  
+  // Add new segment (body) every few frames (snake grows)
+  if (frameCount % 5 == 0 && snake.length < 6) {  // Adds a new segment every 5 frames, max length 6
+    let newSegment = new Segment(snake[snake.length - 1].x, snake[snake.length - 1].y, 80, 2, 255);
+    snake.push(newSegment);
   }
 }
 
-// Draw a simple grid
-function drawGrid() {
-  stroke(200,200,200,60);
-  for (let i = 0; i < width; i += 40) {
-    line(i, 0, i, height);
-  }
-  for (let i = 0; i < height; i += 40) {
-    line(0, i, width, i);
-  }
-}
-
-// Handle mouse clicks
-function mousePressed() {
-  if (mouseButton === LEFT) {
-    // Add small circle on left click
-    smallShapes.push(new HappyObject(mouseX, mouseY));
-  } else if (mouseButton === RIGHT) {
-    // Add small square on right click
-    smallShapes.push(new SadObject(mouseX, mouseY));
-  }
-}
-
-// Big Circle class that gravitates toward or away from points
-class Protagonist {
-  constructor(x, y) {
+class Segment {
+  constructor(x, y, size, position, color) {
     this.x = x;
     this.y = y;
-    this.radius = 20;
-    this.speed = 1;
+    this.size = size;
+    this.position = position;
+    this.color = color;
   }
 
-  update(shapes) {
-    let forceX = 0;
-    let forceY = 0;
+  // Moves the segment closer to a target position (previous segment)
+  moveTo(targetX, targetY) {
+    this.x += (targetX - this.x) * 0.1;  // Delay effect
+    this.y += (targetY - this.y) * 0.1;
+  }
 
-    // Calculate the combined gravitational force from all shapes
-    for (let shape of shapes) {
-      let dx = shape.x - this.x;
-      let dy = shape.y - this.y;
-      let distance = dist(this.x, this.y, shape.x, shape.y);
-
-      if (distance === 0) {
-        continue; // Avoid division by zero
-      }
-
-      let force = 5 / (distance * distance); // Inverse square law (strength of gravity)
-
-      if (shape instanceof HappyObject) {
-        forceX += force * (dx / distance);
-        forceY += force * (dy / distance);
-      } else if (shape instanceof SadObject) {
-        forceX -= force * (dx / distance); // Pull away from squares
-        forceY -= force * (dy / distance); // Pull away from squares
-      }
+  display() {
+    fill(this.color);
+    switch (this.position) {
+      case 1:  // Circle
+        ellipse(this.x, this.y, this.size);
+        break;
+      case 2:  // Hexagon
+        rect(this.x, this.y, this.size, this.size);
+        break;
+        case 3:  // Pentagon
+        rect(this.x, this.y, this.size, this.size);
+        break;
+        case 4:  // Rectangle
+        rect(this.x, this.y, this.size, this.size);
+        break;
+        case 5:  // Triangle
+        rect(this.x, this.y, this.size, this.size);
+        break;
     }
-
-    // Apply the force to move the big circle
-    this.x += forceX * this.speed;
-    this.y += forceY * this.speed;
-  }
-
-  display() {
-    fill(255, 0, 0);
-    ellipse(this.x, this.y, this.radius * 2);
-  }
-}
-
-// Small Circle class
-class HappyObject {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.radius = 10;
-  }
-
-  display() {
-    fill(0, 0, 255);
-    ellipse(this.x, this.y, this.radius * 2);
-  }
-}
-
-// Small Square class
-class SadObject {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.size = 10;
-  }
-
-  display() {
-    fill(0, 255, 0);
-    rect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
   }
 }
