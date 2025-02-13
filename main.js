@@ -5,6 +5,18 @@ let goal = null;
 let idleOffsetX = 0;
 let idleOffsetY = 0;
 
+let intellectual;
+let physical;
+let social;
+let grid;
+
+function preload() {
+  intellectual = loadImage('intellectual.png');
+  physical = loadImage('physical.png');
+  social = loadImage('social.png');
+  grid = loadImage('grid.png');
+}
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   noStroke();
@@ -21,14 +33,34 @@ function setup() {
 
 function draw() {
   background("#4C00B0");
+
+  // Background grid
+  let gridAspect = grid.width / grid.height;
+  let canvasAspect = width / height;
+
+  let sx, sy, sWidth, sHeight;
+
+  if (gridAspect > canvasAspect) {
+    sWidth = grid.height * canvasAspect;
+    sHeight = grid.height;
+    sx = (grid.width - sWidth) / 2;
+    sy = 0;
+  } else {
+    sWidth = grid.width;
+    sHeight = grid.width / canvasAspect;
+    sx = 0;
+    sy = (grid.height - sHeight) / 2;
+  }
+
+  image(grid, 0, 0, width, height, sx, sy, sWidth, sHeight);
+
+  // Icons
+  image(intellectual, width*0.23, height*0.19, 140, 140);
+  image(social, width*0.44, height*0.79, 140, 140);
+  image(physical, width*0.77, height*0.3, 140, 140);
+
   fill(255);
 
-  // Texts
-  textSize(28);
-  textAlign(LEFT);
-  text('PLEASURE PURSUIT\nVIEWS ON PLEASURE', 50, 50);
-  textAlign(RIGHT);
-  text('ARON EGGENBERGER\n2025', width - 50, height - 80);
 
   // Move snake towards goal
   if (goal) {
@@ -79,32 +111,69 @@ function draw() {
   if (goal) {
     goal.display();
   }
+
+
+  // Texts
+  fill(255);
+  textSize(32);
+  textAlign(LEFT);
+  text('NEAR SPHERE\nVIEWS ON PLEASURE', 50, 50);
+  textAlign(RIGHT);
+  text('ARON EGGENBERGER\n2025', width - 50, height - 80);
 }
 
 
-function mousePressed() {
-  // Create a new goal when mouse is pressed
-  goal = new Goal(mouseX, mouseY);
-}
 
 function collectGoal() {
-  // Store the hexagon's current color (before it changes)
-  let tempHexagonColor = snake[snake.length - 1].color;
-
-  // Hexagon adopts the goal color
-  snake[snake.length - 1].color = goal.color;  // The hexagon now takes the goal color
-
-  // Propagate colors
-  /*
-  for (let i = snake.length - 2; i >= 0; i--) {
-    let currentSegment = snake[i];
-    let nextColor = (i === snake.length - 2) ? tempHexagonColor : snake[i + 1].color;
-    currentSegment.color = nextColor;
-  }*/
+  // Change the color of the hexagon (second segment)
+  if (snake.length > 1) {
+    snake[4].color = snake[3].color;  // Color shift
+    snake[3].color = snake[2].color;  // Color shift
+    snake[2].color = snake[1].color;  // Color shift
+    snake[1].color = goal.color;  // Hexagon becomes goal color
+  }
 
   // Remove goal
   goal = null;
 }
+
+function mousePressed() {
+  // Create a new goal on click
+  goal = new Goal(mouseX, mouseY);
+}
+
+class Goal {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.size = 50;
+
+    // Calculate the angle of the goal relative to the center of the canvas
+    let angle = atan2(this.y - height / 2, this.x - width / 2);
+
+    // Map the angle to a hue value (0 to 360)
+    let hue = map(angle, -PI, PI, 0, 360);
+
+    // Set saturation and brightness for vivid colors
+    let saturation = 100;  // Full saturation for vivid colors
+    let brightness = 100;  // Full brightness for vibrant colors
+
+    // Set the color in HSB mode
+    colorMode(HSB, 360, 100, 100);
+    this.color = color(hue, saturation, brightness);
+
+    // Switch back to RGB mode for drawing
+    colorMode(RGB, 255, 255, 255);
+  }
+
+  display() {
+    fill(this.color);
+    ellipse(this.x, this.y, this.size);
+  }
+}
+
+
+
 
 class Segment {
   constructor(x, y, size, position, color) {
@@ -207,16 +276,3 @@ class Segment {
   }
 }
 
-class Goal {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.size = 50;
-    this.color = color(random(255), random(255), random(255));  // Random color
-  }
-
-  display() {
-    fill(this.color);
-    ellipse(this.x, this.y, this.size);
-  }
-}
